@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Student Portal - Final Expo Project</title>
+
+<style>
+body{
+margin:0;
+font-family:Segoe UI;
+color:white;
+display:flex;
+overflow:hidden;
+background: linear-gradient(270deg,#1a0025,#3b0764,#0f172a);
+background-size:600% 600%;
+animation:bgMove 10s ease infinite;
+cursor:none;
+}
+
+@keyframes bgMove{
+0%{background-position:0%}
+50%{background-position:100%}
+100%{background-position:0%}
+}
+
+#canvas{
+position:fixed;
+top:0;
+left:0;
+z-index:-2;
+}
+
+/* SIDEBAR */
+.sidebar{
+width:260px;
+background:#111827;
+padding:25px;
+height:100vh;
+}
+.sidebar p{color:gray;}
+.active{color:gold !important;}
+
+.main{flex:1;padding:40px;}
+
+.progress{
+height:8px;background:#222;border-radius:10px;
+overflow:hidden;margin-bottom:20px;
+}
+.progress-bar{
+height:100%;width:0%;
+background:gold;
+transition:0.4s;
+}
+
+.form-box{
+background:rgba(255,255,255,0.08);
+padding:30px;
+border-radius:15px;
+backdrop-filter:blur(10px);
+}
+
+input{
+width:93%;
+padding:12px;
+margin:10px;
+border-radius:8px;
+border:none;
+background:#1f2937;
+color:white;
+}
+
+button{
+margin:10px;
+padding:12px 20px;
+background:cyan;
+border:none;
+border-radius:8px;
+cursor:pointer;
+}
+button:hover{background:deepskyblue;}
+
+.strength{
+height:6px;width:93%;
+background:#333;
+border-radius:10px;
+margin-left:10px;
+}
+.strength div{
+height:100%;
+width:0%;
+background:red;
+transition:0.3s;
+}
+
+/* ID CARD */
+#idCard{
+width:320px;
+margin:20px auto;
+padding:20px;
+border-radius:15px;
+background:rgba(255,255,255,0.1);
+backdrop-filter:blur(10px);
+box-shadow:0 0 20px rgba(0,0,0,0.5);
+}
+
+/* CURSOR */
+.cursor{
+position:fixed;
+width:14px;
+height:14px;
+background:cyan;
+border-radius:50%;
+pointer-events:none;
+z-index:999;
+transform:translate(-50%,-50%);
+box-shadow:0 0 15px cyan;
+}
+
+.cursor-trail{
+position:fixed;
+width:8px;
+height:8px;
+background:rgba(0,255,255,0.5);
+border-radius:50%;
+pointer-events:none;
+z-index:998;
+}
+</style>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+
+<body>
+
+<canvas id="canvas"></canvas>
+<div class="cursor" id="cursor"></div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+<h2 style="color:gold;">GCF</h2>
+<p id="s1">● Personal</p>
+<p id="s2">● Academic</p>
+<p id="s3">● Password</p>
+<p id="s4">● Quiz</p>
+<p id="s5">● Done</p>
+</div>
+
+<div class="main">
+
+<div class="progress"><div class="progress-bar" id="bar"></div></div>
+
+<!-- FORM 1 -->
+<div id="f1" class="form-box">
+<h2>Personal Info</h2>
+<input id="fname" placeholder="First Name">
+<input id="lname" placeholder="Last Name">
+<input id="email" placeholder="Email">
+<input id="age" placeholder="Age">
+<button onclick="next()">Next →</button>
+</div>
+
+<!-- FORM 2 -->
+<div id="f2" class="form-box" style="display:none;">
+<h2>Academic Info</h2>
+<input id="dept" placeholder="Department">
+<input id="college" placeholder="College">
+<input id="year" placeholder="Year (1-4)">
+<button onclick="prev()">← Back</button>
+<button onclick="next()">Next →</button>
+</div>
+
+<!-- FORM 3 -->
+<div id="f3" class="form-box" style="display:none;">
+<h2>Password</h2>
+<input type="password" id="pass" placeholder="Password">
+<div class="strength"><div id="strengthBar"></div></div>
+<input type="password" id="cpass" placeholder="Confirm Password">
+<button onclick="prev()">← Back</button>
+<button onclick="next()">Next →</button>
+</div>
+
+<!-- FORM 4 -->
+<div id="f4" class="form-box" style="display:none;">
+<h2>Quiz</h2>
+<p>What is 9 × 2 ?</p>
+<input id="quiz">
+<button onclick="prev()">← Back</button>
+<button onclick="next()">Finish</button>
+</div>
+
+<!-- FINAL -->
+<div id="f5" style="display:none;text-align:center;">
+<h1 style="color:lightgreen;">🎉 Registration Complete</h1>
+
+<div id="idCard">
+<h3 style="text-align:center;color:cyan;">Student ID Card</h3>
+<p><b>Name:</b> <span id="cardName"></span></p>
+<p><b>Email:</b> <span id="cardEmail"></span></p>
+<p><b>Department:</b> <span id="cardDept"></span></p>
+<p><b>Year:</b> <span id="cardYear"></span></p>
+
+<div style="text-align:center;margin-top:15px;">
+<img id="qr" width="120">
+</div>
+</div>
+
+<h2>📷 QR Scanner</h2>
+<div id="preview" style="width:300px;margin:auto;"></div>
+<p id="scanResult" style="color:cyan;"></p>
+
+</div>
+
+<p id="msg"></p>
+
+</div>
+
+<script>
+
+let msg=document.getElementById("msg");
+let bar=document.getElementById("bar");
+let currentStep=1;
+
+function show(n){
+for(let i=1;i<=5;i++){
+document.getElementById("f"+i).style.display="none";
+document.getElementById("s"+i).classList.remove("active");
+}
+document.getElementById("f"+n).style.display="block";
+document.getElementById("s"+n).classList.add("active");
+bar.style.width=(n-1)*25+"%";
+}
+
+function next(){
+
+if(currentStep==1){
+if(!fname.value||!lname.value||!email.value||!age.value){
+msg.innerText="Fill all fields";return;
+}
+}
+
+if(currentStep==2){
+if(year.value<1||year.value>4){
+msg.innerText="Invalid year";return;
+}
+}
+
+if(currentStep==3){
+if(pass.value.length<6||pass.value!==cpass.value){
+msg.innerText="Password issue";return;
+}
+}
+
+if(currentStep==4){
+if(quiz.value!=18){
+msg.innerText="Wrong answer";return;
+}
+
+cardName.innerText=fname.value+" "+lname.value;
+cardEmail.innerText=email.value;
+cardDept.innerText=dept.value;
+cardYear.innerText=year.value;
+
+let data=`Name:${fname.value}, Email:${email.value}`;
+qr.src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data="+encodeURIComponent(data);
+}
+
+currentStep++;
+msg.innerText="";
+show(currentStep);
+
+if(currentStep==5){
+startScanner();
+}
+}
+
+function prev(){
+currentStep--;
+show(currentStep);
+}
+
+pass.oninput=()=>{
+let s=pass.value.length;
+strengthBar.style.width=s*10+"%";
+if(s<4) strengthBar.style.background="red";
+else if(s<7) strengthBar.style.background="orange";
+else strengthBar.style.background="green";
+};
+
+show(1);
+
+/* CURSOR */
+const cursor=document.getElementById("cursor");
+document.addEventListener("mousemove",e=>{
+cursor.style.left=e.clientX+"px";
+cursor.style.top=e.clientY+"px";
+
+let dot=document.createElement("div");
+dot.className="cursor-trail";
+dot.style.left=e.clientX+"px";
+dot.style.top=e.clientY+"px";
+document.body.appendChild(dot);
+
+setTimeout(()=>{dot.remove();},300);
+});
+
+/* QR SCANNER */
+let scannerStarted=false;
+
+function startScanner(){
+if(scannerStarted) return;
+
+const qrScanner=new Html5Qrcode("preview");
+
+qrScanner.start(
+{ facingMode:"environment" },
+{ fps:10, qrbox:200 },
+msg=>{
+scanResult.innerText="Scanned: "+msg;
+},
+err=>{}
+);
+
+scannerStarted=true;
+}
+
+/* PARTICLES */
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+
+let particles=[];
+
+class Particle{
+constructor(){
+this.x=Math.random()*canvas.width;
+this.y=Math.random()*canvas.height;
+this.vx=(Math.random()-0.5)*1.5;
+this.vy=(Math.random()-0.5)*1.5;
+}
+update(){
+this.x+=this.vx;
+this.y+=this.vy;
+if(this.x<0||this.x>canvas.width) this.vx*=-1;
+if(this.y<0||this.y>canvas.height) this.vy*=-1;
+}
+draw(){
+ctx.fillStyle="white";
+ctx.beginPath();
+ctx.arc(this.x,this.y,2,0,Math.PI*2);
+ctx.fill();
+}
+}
+
+function init(){
+particles=[];
+for(let i=0;i<120;i++) particles.push(new Particle());
+}
+
+function animate(){
+ctx.clearRect(0,0,canvas.width,canvas.height);
+particles.forEach(p=>{p.update();p.draw();});
+requestAnimationFrame(animate);
+}
+
+init();
+animate();
+
+</script>
+
+</body>
+</html>
